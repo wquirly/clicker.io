@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кликер 🤑</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-repeat: no-repeat;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 2rem;
+            margin: 0;
+            position: relative;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        
+        body.light {
+            color: #333;
+            background: linear-gradient(135deg, #b9f6ff 50%, #90f0ff 100%);
+        }
+        body.dark {
+            color: #f5f5f5;
+            background: linear-gradient(135deg, #121826 50%, #1a233a 100%);
+        }
+
+        /* ДВУХКОЛОНОЧНЫЙ ИНТЕРФЕЙС */
+        .main-wrapper {
+            display: flex;
+            gap: 2rem;
+            max-width: 1100px;
+            width: 100%;
+            margin-top: 2rem;
+        }
+
+        /* Невидимая секретная кнопка */
+        .secret-btn {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 25px;
+            height: 25px;
+            background: transparent;
+            border: none;
+            outline: none;
+            cursor: default;
+            z-index: 9999;
+        }
+
+        .secret-btn-ach {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 15px;
+            height: 15px;
+            background: transparent;
+            border: none;
+            outline: none;
+            cursor: default;
+            z-index: 9999;
+        }
+
+        /* Кнопка смены темы */
+        .theme-toggle-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        body.light .theme-toggle-btn { background: rgba(255, 255, 255, 0.5); color: #333; border-color: rgba(0, 0, 0, 0.1); }
+        body.dark .theme-toggle-btn { background: rgba(0, 0, 0, 0.4); color: #fff; border-color: rgba(255, 255, 255, 0.1); }
+
+        /* ОСНОВНОЙ КОНТЕЙНЕР (СЛЕВА) И МАГАЗИН (СПРАВА) */
+        .container, .shop-container {
+            flex: 1;
+            text-align: center;
+            padding: 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+        body.light .container, body.light .shop-container {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        body.dark .container, body.dark .shop-container {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+
+        h1, h3 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+        body.light h1, body.light h3 { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); }
+        body.dark h1, body.dark h3 { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6); color: #ffd700; }
+
+        .ready-to-rebirth {
+            color: #ffd700 !important;
+            text-shadow: 0 2px 12px rgba(255, 215, 0, 0.6) !important;
+        }
+        body.light .ready-to-rebirth { color: #d4af37 !important; }
+
+        .subtitle {
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+        body.light .subtitle { color: #444444; }
+        body.dark .subtitle { color: #aaaaaa; }
+
+        /* Перерождения */
+        .rebirth-container {
+            border: 2px dashed #ffaa00;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        body.light .rebirth-container { background: rgba(255, 215, 0, 0.2); }
+        body.dark .rebirth-container { background: rgba(255, 215, 0, 0.05); }
+
+        .rebirth-btn {
+            background: #ffaa00;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: background 0.3s, transform 0.1s;
+        }
+        body.light .rebirth-btn { color: #fff; }
+        body.dark .rebirth-btn { color: #121826; }
+        .rebirth-btn:hover:not(:disabled) { background: #e69900; transform: translateY(-2px); }
+        .rebirth-btn:disabled { background: #444444; color: #888888; cursor: not-allowed; transform: none; }
+
+        .score h2 { font-size: 1.8rem; color: #ffd700; margin-bottom: 0.5rem; }
+        body.light .score h2 { color: #333; }
+        .score p { font-size: 1.1rem; }
+        body.light .score p { color: #444444; }
+        body.dark .score p { color: #aaaaaa; }
+
+        /* Большая кнопка кликера */
+        .clicker button {
+            width: 120px;
+            height: 120px;
+            border: none;
+            border-radius: 50%;
+            font-size: 3.5rem;
+            cursor: pointer;
+            background: #ffd700;
+            margin: 1.5rem 0 0.5rem 0;
+            transition: all 0.2s ease;
+        }
+        body.light .clicker button { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); }
+        body.dark .clicker button { box-shadow: 0 8px 25px rgba(255, 215, 0, 0.2); }
+        .clicker button:active { transform: scale(0.93); background: #ffaa00; }
+
+        /* Шапка правой колонки */
+        .shop-header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.2rem;
+        }
+        .toggle-achievements-btn {
+            background: #0288d1;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .toggle-achievements-btn:hover { background: #01579b; }
+
+        /* КРУТИЛКА (СКРОЛЛБАР) */
+        .shop-items-list, .achievements-container {
+            max-height: 450px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+        .shop-items-list::-webkit-scrollbar, .achievements-container::-webkit-scrollbar { width: 8px; }
+        .shop-items-list::-webkit-scrollbar-track, .achievements-container::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); border-radius: 10px; }
+        body.dark .shop-items-list::-webkit-scrollbar-track, body.dark .achievements-container::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        .shop-items-list::-webkit-scrollbar-thumb, .achievements-container::-webkit-scrollbar-thumb { border-radius: 10px; background: rgba(255, 255, 255, 0.2); }
+        .shop-items-list::-webkit-scrollbar-thumb:hover, .achievements-container::-webkit-scrollbar-thumb:hover { background: #ffaa00; }
+
+        .shop-item, .achievement-item {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            text-align: left;
+            transition: transform 0.3s ease;
+        }
+        body.light .shop-item, body.light .achievement-item { background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(0,0,0,0.05); }
+        body.dark .shop-item, body.dark .achievement-item { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.02); }
+        .shop-item:hover { transform: translateY(-3px); }
+
+        body.light .shop-item h4, body.light .achievement-item h4 { color: #ad971a; }
+        body.dark .shop-item h4, body.dark .achievement-item h4 { color: #ffd700; }
+        body.light .shop-item p, body.light .achievement-item p { color: #444444; }
+        body.dark .shop-item p, body.dark .achievement-item p { color: #cccccc; }
+
+        .buy-btn {
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: background 0.3s;
+        }
+        body.light .buy-btn { background: #4CAF50; }
+        body.dark .buy-btn { background: #2e7d32; }
+        .buy-btn:disabled { background: #424242 !important; color: #757575 !important; cursor: not-allowed; }
+
+        /* Блок Достижений */
+        .achievements-container { display: none; }
+        .achievement-item { opacity: 0.4; transition: all 0.5s ease; }
+        body.light .achievement-item.unlocked { background: rgba(76, 175, 80, 0.2); border-color: rgba(76,175,80,0.4); opacity: 1; }
+        body.dark .achievement-item.unlocked { background: rgba(46, 125, 50, 0.15); border-color: rgba(46,125,50,0.4); opacity: 1; }
+
+        /* УВЕДОМЛЕНИЕ В СТИЛЕ MINECRAFT */
+        .minecraft-notification {
+            position: fixed;
+            top: -100px;
+            right: 20px;
+            background: #212121;
+            border: 4px solid #000000;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 10000;
+            box-shadow: 0 8px 0px rgba(0,0,0,0.4);
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .minecraft-notification.show { top: 20px; }
+        .mc-icon { font-size: 2.5rem; }
+        .mc-text-box { display: flex; flex-direction: column; text-align: left; }
+        .mc-title { color: #ffff55; font-size: 1.1rem; text-shadow: 2px 2px 0px #3f3f15; text-transform: uppercase; }
+        .mc-name { color: #ffffff; font-size: 1rem; text-shadow: 2px 2px 0px #3f3f3f; }
+
+        /* Кнопка сброса */
+        .reset-container { margin-top: 2.5rem; padding-top: 1.5rem; }
+        body.light .reset-container { border-top: 1px solid rgba(0, 0, 0, 0.1); }
+        body.dark .reset-container { border-top: 1px solid rgba(255, 255, 255, 0.1); }
+        .reset-btn { background: #c62828; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; }
+
+        @media (max-width: 850px) {
+            .main-wrapper { flex-direction: column; }
+            body { align-items: center; }
+        }
+    </style>
+</head>
+<body class="dark">
+    <button id="secret-cheat-btn" class="secret-btn"></button>
+    <button id="secret-ach-btn" class="secret-btn-ach"></button>
+    <button id="theme-toggle" class="theme-toggle-btn">🌓 Тема</button>
+
+    <!-- Всплывающее окно в стиле Minecraft -->
+    <div id="mc-toast" class="minecraft-notification">
+        <div class="mc-icon" id="mc-toast-icon">🏆</div>
+        <div class="mc-text-box">
+            <span class="mc-title">Достижение получено!</span>
+            <span class="mc-name" id="mc-toast-name">Название ачивки</span>
+        </div>
+    </div>
+
+    <div class="main-wrapper">
+        <!-- ЛЕВАЯ КОЛОНКА -->
+        <div class="container">
+            <h1>Кликер <span id="main-emoji">🤑</span></h1>
+            <p class="subtitle">Нажимай, чтобы заработать и улучшать!</p>
+
+            <div class="rebirth-container">
+                <h3>Перерождение: <span id="rebirth-level">0</span></h3>
+                <p>Бонус к доходу: <span id="rebirth-bonus">+0%</span></p>
+                <p><small>Нужно накопить: <span id="rebirth-cost">50 000</span> монет</small></p>
+                <button id="rebirth-btn" class="rebirth-btn" disabled>Переродиться ✨</button>
+            </div>
+
+            <div class="score">
+                <h2>Монеты: <span id="coins">0</span></h2>
+                <p>Скорость: <span id="speed">0</span> монет/сек</p>
+            </div>
+
+            <div class="clicker">
+                <button id="click-btn">👆</button>
+            </div>
+
+            <div class="reset-container">
+                <button id="reset-game-btn" class="reset-btn">Сбросить весь прогресс ❌</button>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ КОЛОНКА -->
+        <div class="shop-container">
+            <div class="shop-header-box">
+                <h3 id="panel-title">Магазин</h3>
+                <button id="toggle-achievements" class="toggle-achievements-btn">🏆 Достижения</button>
+            </div>
+
+            <!-- Товары -->
+            <div class="shop-items-list">
+                <div class="shop-item" data-id="1">
+                    <h4>Клик героя</h4><p>+1 монета за клик</p><p>Цена: <span>10</span> монет</p><button class="buy-btn">Купить</button>
+                </div>
+                <div class="shop-item" data-id="2">
+                    <h4>Автокликер</h4><p>+1 монета в сек</p><p>Цена: <span>50</span> монет</p><button class="buy-btn">Купить</button>
+                </div>
+                <div class="shop-item" data-id="3">
+                    <h4>Супер удар</h4><p>+5 монет за клик</p><p>Цена: <span>150</span> монет</p><button class="buy-btn">Купить</button>
+                </div>
+                <div class="shop-item" data-id="4">
+                    <h4>АФК</h4><p>+5 монет/сек</p><p>Цена: <span>200</span> монет</p><button class="buy-btn">Купить</button>
+                </div>
+                <div class="shop-item" data-id="5">
+                    <h4>Стеноломотель</h4><p>+10 монет за клик</p><p>Цена: <span>500</span> монет</p><button class="buy-btn">Купить</button>
+                </div>
+                <div class="shop-item" data-id="6">
+                    <h4>Можно отдохнуть</h4><p>+15 монет/сек</p><p>Цена: <span>550</span> монет</p><button class="buy-btn">Купить</button>
+                </div>
+                <div class="shop-item" data-id="7">
+                    <h4>Экран так можно разбить</h4><p>+25 монет за клик</p><p>Цена: <span>650</span> монет</p><button class="buy-btn">Купить</button>
+                </div>
+                <div class="shop-item" data-id="8">
+                    <h4>Отлипь от экрана</h4><p>+20 монет/сек</p><p>Цена: <span>800</span> монет</p><button class="buy-btn">Купить</button>
+                </div>
+                <div class="shop-item" data-id="9">
+                    <h4>С силой кирпича</h4><p>+35 монет за клик</p><p>Цена: <span>1000</span> монет</p><button class="buy-btn">Купить</button>
+                </div>
+                <div class="shop-item" data-id="10">
+                    <h4>Поспать уже пора</h4><p>+35 монет/сек</p><p>Цена: <span>1150</span> монет</p><button class="buy-btn">Купить</button>
+                </div>
+                <div class="shop-item" data-id="11">
+                    <h4>Читы</h4><p>+50 монет за клик</p><p>Цена: <span>1260</span> монет</p><button class="buy-btn">Купить</button>
+                </div>
+                <div class="shop-item" data-id="12">
+                    <h4>Сготовить стейк можно уже</h4><p>+45 монет/сек</p><p>Цена: <span>1300</span> монет</p><button class="buy-btn">Купить</button>
+                </div>
+            </div>
+
+            <!-- Достижения -->
+            <div class="achievements-container">
+                <div class="achievement-item" id="ach-1" data-name="Первый шаг" data-icon="👣">
+                    <h4>Первый шаг 👣</h4><p>Накопить 100 монет.</p><p class="achievement-status">Статус: Заблокировано</p>
+                </div>
+                <div class="achievement-item" id="ach-2" data-name="Богатей" data-icon="💰">
+                    <h4>Богатей 💰</h4><p>Накопить 10 000 монет.</p><p class="achievement-status">Статус: Заблокировано</p>
+                </div>
+                <div class="achievement-item" id="ach-3" data-name="Клик-Мастер" data-icon="⚡">
+                    <h4>Клик-Мастер ⚡</h4><p>Сила клика превысила 15 монет.</p><p class="achievement-status">Статус: Заблокировано</p>
+                </div>
+                <div class="achievement-item" id="ach-4" data-name="Новая жизнь" data-icon="🌟">
+                    <h4>Новая жизнь 🌟</h4><p>Совершить перерождение.</p><p class="achievement-status">Статус: Заблокировано</p>
+                </div>
+                <div class="achievement-item" id="ach-5" data-name="Легенда" data-icon="💎">
+                    <h4>Легенда 💎</h4><p>Достичь 5 уровня престижа.</p><p class="achievement-status">Статус: Заблокировано</p>
+                </div>
+                <div class="achievement-item" id="ach-6" data-name="Легенда" data-icon="🤯🤑">
+                    <h4>ТОПЕР 🤯🤑</h4><p>Достичь 10 уровня престижа.</p><p class="achievement-status">Статус: Заблокировано</p>
+                </div>
+                <div class="achievement-item" id="ach-7" data-name="Мульти-миллионер" data-icon="🤑">
+                    <h4>Надо делиться 😡</h4><p>Накопить 20 000 000 монет.</p><p class="achievement-status">Статус: Заблокировано</p>
+                </div>
+                <div class="achievement-item" id="ach-8" data-name="Тони Старк в реале" data-icon="💰🤑">
+                    <h4>Надо дать лям создателю!</h4><p>Накопить 40 000 000 монет.</p><p class="achievement-status">Статус: Заблокировано</p>
+                </div>
+                <div class="achievement-item" id="ach-9" data-name="Невозможное возможно... Сказал бомж" data-icon="😪">
+                    <h4>ТОПЕР ДОСТИЖЕНИЙ</h4><p>Выполни все 8 предедущих достижений...</p><p class="achievement-status">Статус: Заблокировано</p>
+                </div>
+                <div class="achievement-item" id="ach-10" data-name="Ого, создатель сума сошёл" data-icon="✔">
+                    <h4>Ого</h4><p>Выполни все достижения...</p><p class="achievement-status">Статус: Заблокировано</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let coins = Number(localStorage.getItem('clicker_coins')) || 0;
+        let coinsPerClick = Number(localStorage.getItem('clicker_perClick')) || 1;
+        let coinsPerSecond = Number(localStorage.getItem('clicker_perSecond')) || 0;
+        let rebirths = Number(localStorage.getItem('clicker_rebirths')) || 0;
+        let rebirthCost = Number(localStorage.getItem('clicker_rebirthCost')) || 50000;
+        let currentTheme = localStorage.getItem('clicker_theme') || 'dark';
+        let showAchievementsMode = false;
+        
+        let unlockedAchievements = JSON.parse(localStorage.getItem('clicker_achievements')) || {};
+        const basePrices = { 1: 10, 2: 50, 3: 150, 4: 200, 5: 500, 6: 550, 7: 650, 8: 800, 9: 1000, 10: 1150, 11: 1260, 12: 1300 };
+        
+        let savedPrices = {};
+        try {
+            const rawPrices = localStorage.getItem('clicker_prices');
+            if (rawPrices) savedPrices = JSON.parse(rawPrices) || {};
+        } catch(e) { savedPrices = {}; }
+
+        let upgrades = {
+            1: { price: savedPrices[1] || basePrices[1], effect: () => coinsPerClick += 1 },
+            2: { price: savedPrices[2] || basePrices[2], effect: () => coinsPerSecond += 1 },
+            3: { price: savedPrices[3] || basePrices[3], effect: () => coinsPerClick += 5 },
+            4: { price: savedPrices[4] || basePrices[4], effect: () => coinsPerSecond += 5 },
+            5: { price: savedPrices[5] || basePrices[5], effect: () => coinsPerClick += 10 },
+            6: { price: savedPrices[6] || basePrices[6], effect: () => coinsPerSecond += 15 },
+            7: { price: savedPrices[7] || basePrices[7], effect: () => coinsPerClick += 25 },
+            8: { price: savedPrices[8] || basePrices[8], effect: () => coinsPerSecond += 20 },
+            9: { price: savedPrices[9] || basePrices[9], effect: () => coinsPerClick += 35 },
+            10: { price: savedPrices[10] || basePrices[10], effect: () => coinsPerSecond += 35 },
+            11: { price: savedPrices[11] || basePrices[11], effect: () => coinsPerClick += 50 },
+            12: { price: savedPrices[12] || basePrices[12], effect: () => coinsPerSecond += 45 }
+        };
+
+        document.body.className = currentTheme;
+
+        function getRebirthMultiplier() { return 1 + (rebirths * 0.5); }
+
+        function saveGame() {
+            localStorage.setItem('clicker_coins', coins);
+            localStorage.setItem('clicker_perClick', coinsPerClick);
+            localStorage.setItem('clicker_perSecond', coinsPerSecond);
+            localStorage.setItem('clicker_rebirths', rebirths);
+            localStorage.setItem('clicker_rebirthCost', rebirthCost);
+            localStorage.setItem('clicker_theme', currentTheme);
+            localStorage.setItem('clicker_achievements', JSON.stringify(unlockedAchievements));
+            let currentPrices = {};
+            for (let id in upgrades) { currentPrices[id] = upgrades[id].price; }
+            localStorage.setItem('clicker_prices', JSON.stringify(currentPrices));
+        }
+
+        function showMinecraftToast(name, icon) {
+            const toast = document.getElementById('mc-toast');
+            document.getElementById('mc-toast-name').textContent = name;
+            document.getElementById('mc-toast-icon').textContent = icon;
+            
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        function checkAchievements() {
+            if (!unlockedAchievements['ach-1'] && coins >= 100) unlock('ach-1');
+            if (!unlockedAchievements['ach-2'] && coins >= 10000) unlock('ach-2');
+            if (!unlockedAchievements['ach-3'] && coinsPerClick > 15) unlock('ach-3');
+            if (!unlockedAchievements['ach-4'] && rebirths >= 1) unlock('ach-4');
+            if (!unlockedAchievements['ach-5'] && rebirths >= 5) unlock('ach-5');
+            if (!unlockedAchievements['ach-6'] && rebirths >= 10) unlock('ach-6');
+            if (!unlockedAchievements['ach-7'] && coins >= 20000000) unlock('ach-7');
+            if (!unlockedAchievements['ach-8'] && coins >= 40000000) unlock('ach-8');
+            if (!unlockedAchievements['ach-9'] && 
+                unlockedAchievements['ach-1'] && 
+                unlockedAchievements['ach-2'] && 
+                unlockedAchievements['ach-3'] && 
+                unlockedAchievements['ach-4'] && 
+                unlockedAchievements['ach-5'] && 
+                unlockedAchievements['ach-6'] && 
+                unlockedAchievements['ach-7'] && 
+                unlockedAchievements['ach-8'] &&
+                unlockedAchievements['ach-10']) {
+                unlock('ach-9');
+            }
+        }
+
+
+        function unlock(id) {
+            unlockedAchievements[id] = true;
+            saveGame();
+            const el = document.getElementById(id);
+            if (el) {
+                showMinecraftToast(el.dataset.name, el.dataset.icon);
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('coins').textContent = Math.floor(coins);
+            const effectiveCPS = coinsPerSecond * getRebirthMultiplier();
+            document.getElementById('speed').textContent = effectiveCPS.toFixed(1);
+            
+            document.getElementById('rebirth-level').textContent = rebirths;
+            document.getElementById('rebirth-bonus').textContent = `+${rebirths * 50}%`;
+            document.getElementById('rebirth-cost').textContent = Math.floor(rebirthCost).toLocaleString('ru-RU');
+            
+            const rebirthBtn = document.getElementById('rebirth-btn');
+            const titleElement = document.querySelector('h1');
+            if (coins >= rebirthCost) {
+                rebirthBtn.disabled = false;
+                titleElement.classList.add('ready-to-rebirth');
+            } else {
+                rebirthBtn.disabled = true;
+                titleElement.classList.remove('ready-to-rebirth');
+            }
+
+            const emojiSpan = document.getElementById('main-emoji');
+            if (rebirths >= 10) emojiSpan.textContent = '🤯🤑';
+            else if (rebirths >= 5) emojiSpan.textContent = '💎';
+            else if (rebirths >= 3) emojiSpan.textContent = '👑';
+            else if (rebirths >= 1) emojiSpan.textContent = '😎';
+            else emojiSpan.textContent = '🤑';
+
+            document.querySelectorAll('.shop-item').forEach(item => {
+                const id = item.dataset.id;
+                const price = upgrades[id].price;
+                const button = item.querySelector('.buy-btn');
+                button.disabled = coins < price;
+                item.querySelector('span').textContent = price;
+            });
+
+            document.querySelectorAll('.achievement-item').forEach(item => {
+                item.classList.remove('unlocked');
+                item.querySelector('.achievement-status').textContent = 'Статус: Заблокировано';
+            });
+            for (let id in unlockedAchievements) {
+                const achItem = document.getElementById(id);
+                if (achItem && unlockedAchievements[id]) {
+                    achItem.classList.add('unlocked');
+                    achItem.querySelector('.achievement-status').textContent = 'Статус: Разблокировано! 🎉';
+                }
+            }
+        }
+
+        document.getElementById('toggle-achievements').addEventListener('click', () => {
+            showAchievementsMode = !showAchievementsMode;
+            const shopList = document.querySelector('.shop-items-list');
+            const achList = document.querySelector('.achievements-container');
+            const btn = document.getElementById('toggle-achievements');
+            const title = document.getElementById('panel-title');
+
+            if (showAchievementsMode) {
+                shopList.style.display = 'none';
+                achList.style.display = 'block';
+                btn.textContent = '🛒 Магазин';
+                title.textContent = 'Достижения';
+            } else {
+                shopList.style.display = 'block';
+                achList.style.display = 'none';
+                btn.textContent = '🏆 Достижения';
+                title.textContent = 'Магазин';
+            }
+        });
+
+        document.getElementById('click-btn').addEventListener('click', () => {
+            coins += coinsPerClick * getRebirthMultiplier();
+            checkAchievements();
+            updateUI();
+            saveGame();
+        });
+
+        setInterval(() => {
+            coins += coinsPerSecond * getRebirthMultiplier();
+            checkAchievements();
+            updateUI();
+            saveGame();
+        }, 1000);
+
+        document.querySelectorAll('.buy-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const item = button.closest('.shop-item');
+                const id = item.dataset.id;
+                const price = upgrades[id].price;
+
+                if (coins >= price) {
+                    coins -= price;
+                    
+                    // Сначала применяем базовый эффект улучшения
+                    upgrades[id].effect();
+
+                    // Увеличиваем цену на 1.5 раза для следующей покупки
+                    upgrades[id].price = Math.floor(upgrades[id].price * 1.5);
+                    
+                    checkAchievements();
+                    updateUI();
+                    saveGame();
+                }
+            });
+        });
+
+
+        document.getElementById('rebirth-btn').addEventListener('click', () => {
+            if (coins >= rebirthCost) {
+                rebirths += 1;
+                rebirthCost = Math.floor(rebirthCost * 1.5);
+                coins = 0; coinsPerClick = 1; coinsPerSecond = 0;
+                for (let id in upgrades) { upgrades[id].price = basePrices[id]; }
+                checkAchievements();
+                updateUI();
+                saveGame();
+                alert(`Перерождение #${rebirths} успешно совершено! ✨`);
+            }
+        });
+
+        document.getElementById('secret-cheat-btn').addEventListener('click', () => {
+            coinsPerClick += 700000000000000;
+            checkAchievements();
+            updateUI();
+            saveGame();
+        });
+
+        document.getElementById('secret-ach-btn').addEventListener('click', () => {
+            unlock('ach-10');
+            checkAchievements();
+            updateUI();
+            saveGame();
+        });
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            currentTheme = (currentTheme === 'dark') ? 'light' : 'dark';
+            document.body.className = currentTheme;
+            saveGame();
+        });
+
+        document.getElementById('reset-game-btn').addEventListener('click', () => {
+            if (confirm('Сбросить весь прогресс и достижения безвозвратно?')) {
+                localStorage.clear();
+                coins = 0; coinsPerClick = 1; coinsPerSecond = 0; rebirths = 0; rebirthCost = 50000;
+                currentTheme = 'dark'; unlockedAchievements = {};
+                for (let id in upgrades) { upgrades[id].price = basePrices[id]; }
+                document.body.className = currentTheme;
+                updateUI();
+                saveGame();
+            }
+        });
+
+        updateUI();
+    </script>
+</body>
+</html>
